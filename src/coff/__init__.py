@@ -109,7 +109,7 @@ class CoffHeader(_LoggerObject):
 	def __getattr__(self,k):
 		nk = k
 		if k in self.__class__.keywords:
-			nk = '_%s_%s'%(self.__class__.__name__,k)
+			nk = '_%s__%s'%(self.__class__.__name__,k)
 		if nk in self.__dict__.keys():
 			return self.__dict__[nk]
 		return None
@@ -125,7 +125,7 @@ class CoffHeader(_LoggerObject):
 
 	def __str__(self):
 		return 'CoffHeader(id[0x%x];numsects[0x%x];timestamp[0x%x];symtab[0x%x];symnums[0x%x];optsize[0x%x];flags[0x%x];targetid[0x%x])'%(\
-				self.__id,self.__numsects,self.__timestamp,self.__symtab,self.__symnums,self.__optsize,self.__flags,self.__targetid)
+				self.id,self.numsects,self.timestamp,self.symtab,self.symnums,self.optsize,self.flags,self.targetid)
 
 	def __repr__(self):
 		return str(self)
