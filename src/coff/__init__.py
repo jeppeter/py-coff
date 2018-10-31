@@ -126,14 +126,14 @@ def coff_add_name(s,items):
     return rets
 
 class CoffHeader(_LoggerObject):
-    keywords = ['id','numsects','timestamp','symtab','symnums','optsize','flags','targetid']
+    keywords = ['id','numsects','timestamp','symtab','symnums','optsize','flags']
+    headersize = 20
     def __init__(self,data):
         super(CoffHeader,self).__init__()
         if len(data) < 2:
             raise Exception('len[%d] < 2'%(len(data)))
         self.__id = struct.unpack('<H',data[:2])[0]
         self.__size = 20
-        self.__targetid = 0
 
         if len(data) < self.__size:
             raise Exception('len[%d] < %d'%(len(data),self.__size))
@@ -142,22 +142,12 @@ class CoffHeader(_LoggerObject):
                 struct.unpack('<HHiiiHH',data[:self.__size])
         return
 
-    def format_targetid(self,targetid):
+    def format_id(self,tid):
         rets = ''
-        if targetid == 0x97:
-            rets = 'TMS470'
-        elif targetid == 0x98:
-            rets = 'TMS320C5400'
-        elif targetid == 0x99:
-            rets = 'TMS320C6000'
-        elif targetid == 0x9c:
-            rets = 'TMS320C5500'
-        elif targetid == 0x9d:
-            rets = 'TMS320C2800'
-        elif targetid == 0xa0:
-            rets = 'MSP430'
-        elif targetid == 0xa1:
-            rets = 'TMS320C5500+'
+        if tid == 0x8664:
+            rets = 'amd64'
+        elif tid == 0x14c:
+            rets = 'i386'
         return rets
 
 
@@ -188,9 +178,8 @@ class CoffHeader(_LoggerObject):
         return self.__size
 
     def __str__(self):
-        return 'CoffHeader(id[0x%x];numsects[0x%x];timestamp[0x%x(%s)];symtab[0x%x];symnums[0x%x];optsize[0x%x];flags[0x%x(%s)];targetid[0x%x(%s)])'%(\
-                self.id,self.numsects,self.timestamp,self.foramt_time(self.timestamp),self.symtab,self.symnums,self.optsize,self.flags, self.format_flag(self.flags),self.targetid,\
-                self.format_targetid(self.targetid))
+        return 'CoffHeader(id[0x%x(%s)];numsects[0x%x];timestamp[0x%x(%s)];symtab[0x%x];symnums[0x%x];optsize[0x%x];flags[0x%x(%s)];)'%(\
+                self.id,self.format_id(self.id),self.numsects,self.timestamp,self.foramt_time(self.timestamp),self.symtab,self.symnums,self.optsize,self.flags, self.format_flag(self.flags))
 
     def __repr__(self):
         return str(self)
