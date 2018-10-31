@@ -43,11 +43,28 @@ def header_handler(args,parser):
 		sys.stdout.write('%s header %s\n'%(v,hdr))
 	sys.exit(0)
 	return
+def optheader_handler(args,parser):
+	set_logging_level(args)
+	for v in args.subnargs:
+		data = read_binary(v)
+		hdr = coff.CoffHeader(data)
+		if hdr.optsize == 0:
+			sys.stdout.write('[%s] no opt header\n'%(v))
+		else:
+			opthdr = coff.CoffOptHeader(data[hdr.size:])
+			sys.stdout.write('[%s] optheader %s\n'%(v,opthdr))
+	sys.exit(0)
+	return
+
+
 def main():
 	commandline='''
 	{
 		"verbose|v" : "+",
 		"header<header_handler>" : {
+			"$" : "*"
+		},
+		"optheader<optheader_handler>" : {
 			"$" : "*"
 		}
 	}
