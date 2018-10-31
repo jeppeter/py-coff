@@ -250,7 +250,7 @@ class CoffSectionHeader(_LoggerObject):
         else:
             nname = ''
         for b in name:
-            if b == b'\x00':
+            if b == b'\x00' or b == b'\x20':
                 break
             if sys.version[0] == '3':
                 #logging.info('b [0x%x]'%(b))
@@ -260,7 +260,7 @@ class CoffSectionHeader(_LoggerObject):
         if sys.version[0] == '3':
             self.__name = nname.decode('utf8')
         else:
-            self.__name = str(name)
+            self.__name = str(nname)
         return
 
 
