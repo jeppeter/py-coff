@@ -43,6 +43,7 @@ def header_handler(args,parser):
 		sys.stdout.write('%s header %s\n'%(v,hdr))
 	sys.exit(0)
 	return
+
 def optheader_handler(args,parser):
 	set_logging_level(args)
 	for v in args.subnargs:
@@ -56,6 +57,34 @@ def optheader_handler(args,parser):
 	sys.exit(0)
 	return
 
+def sections_handler(args,parser):
+	set_logging_level(args)
+	for v in args.subnargs:
+		data = read_binary(v)
+		hdr = coff.CoffHeader(data)
+		size = hdr.get_size()
+		if hdr.optsize != 0:
+			size += hdr.optsize
+		curoff = size
+		sys.stdout.write('[%s] %s\n'%(v,hdr))
+		for i in range(hdr.numsects + 1):
+			sections = coff.CoffSectionHeader(data[curoff:])
+			sys.stdout.write('[%s].[%d] %s\n'%(v,i,sections))
+			curoff += sections.get_size()
+	sys.exit(0)
+	return
+
+def symbols_handler(args,parser):
+	set_logging_level(args)
+	for v in args.subnargs:
+		cffmt = coff.Coff(v)
+		idx = 0
+		for sym in cffmt.symtables:
+			sys.stdout.write('[%s].[%d] %s\n'%(v,idx,sym))
+			idx += 1
+	sys.exit(0)
+	return
+
 
 def main():
 	commandline='''
@@ -65,6 +94,12 @@ def main():
 			"$" : "*"
 		},
 		"optheader<optheader_handler>" : {
+			"$" : "*"
+		},
+		"sections<sections_handler>" : {
+			"$" : "*"
+		},
+		"symbols<symbols_handler>" : {
 			"$" : "*"
 		}
 	}
