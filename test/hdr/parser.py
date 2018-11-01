@@ -85,22 +85,35 @@ def symbols_handler(args,parser):
 	sys.exit(0)
 	return
 
+def relocs_handler(args,parser):
+	set_logging_level(args)
+	for v in args.subnargs:
+		cffmt = coff.Coff(v)
+		idx = 0
+		for rel in cffmt.relocs:
+			sys.stdout.write('[%s].[%d] %s\n'%(v,idx,rel))
+			idx += 1
+	sys.exit(0)
+	return
 
 def main():
 	commandline='''
 	{
 		"verbose|v" : "+",
 		"header<header_handler>" : {
-			"$" : "*"
+			"$" : "+"
 		},
 		"optheader<optheader_handler>" : {
-			"$" : "*"
+			"$" : "+"
 		},
 		"sections<sections_handler>" : {
-			"$" : "*"
+			"$" : "+"
 		},
 		"symbols<symbols_handler>" : {
-			"$" : "*"
+			"$" : "+"
+		},
+		"relocs<relocs_handler>" : {
+			"$" : "+"
 		}
 	}
 	'''

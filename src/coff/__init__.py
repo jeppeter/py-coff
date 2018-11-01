@@ -108,6 +108,14 @@ class _LoggerObject(object):
         self.__dict__[k] = v
         return
 
+    def __eq__(self,other):
+        for v in self.__class__.keywords:
+            sv = self.__getattr__(v)
+            ov = self.__getattr__(v)
+            if sv != ov:
+                return False
+        return True
+
 
 COFF_F_RELFLG=1
 COFF_F_EXEC=2
@@ -224,15 +232,15 @@ COFF_STYP_PADDED=0x10000
 
 
 class CoffSectionHeader(_LoggerObject):
-    keywords=['name','paddr','vaddr','size','offdata','offrel','reserve','numrels','lineentries','flags','reserve2','pagenum']
+    keywords=['name','paddr','vaddr','size','offdata','offrel','numrels','numlnno','lineentries','flags']
     headersize = 40
     def __init__(self,data):
         super(CoffSectionHeader,self).__init__()
         if len(data) < self.__class__.headersize:
             raise Exception('len[%d] < [%d]'%(len(data), self.__class__.headersize))
         self.__paddr, self.__vaddr, self.__size,self.__offdata ,\
-        self.__offrel,  self.__numrels, self.__lineentries, self.__flags =\
-             struct.unpack('<lllllLLL',data[8:self.__class__.headersize])
+        self.__offrel, self.__lineentries, self.__numrels, self.__numlnno ,self.__flags =\
+             struct.unpack('<llllllHHl',data[8:self.__class__.headersize])
         name = data[:8]
         if sys.version[0] == '3':
             nname = b''
@@ -289,8 +297,8 @@ class CoffSectionHeader(_LoggerObject):
         return self.__class__.headersize
 
     def __str__(self):
-        return 'CoffSectionHeader(name[%s];paddr[0x%x];vaddr[0x%x];size[0x%x];offdata[0x%x];offrel[0x%x];numrels[0x%x];lineentries[0x%x];flags[0x%x(%s)])'%(\
-                self.name,self.paddr,self.vaddr,self.size,self.offdata,self.offrel,self.numrels , self.lineentries,self.flags, self.format_flags(self.flags))
+        return 'CoffSectionHeader(name[%s];paddr[0x%x];vaddr[0x%x];size[0x%x];offdata[0x%x];offrel[0x%x];numrels[0x%x];lineentries[0x%x];numlnno[0x%x];flags[0x%x(%s)])'%(\
+                self.name,self.paddr,self.vaddr,self.size,self.offdata,self.offrel,self.numrels , self.lineentries, self.numlnno,self.flags, self.format_flags(self.flags))
 
     def __repr__(self):
         return str(self)
@@ -371,8 +379,77 @@ class CoffSymtable(_LoggerObject):
         return self.__size
 
 
+class CoffReloc(_LoggerObject):
+    keywords = ['name','vaddr','type']
+    headersize = 10
+    def __init__(self,data,dataoff,basesymoff,stroff,strend):
+        if (dataoff + self.__class__.headersize) > len(data):
+            raise Exception('[%d + %d] > [%d]'%(dataoff,self.__class__.headersize, len(data)))
+        self.__vaddr,symidx,self.__type = struct.unpack('<LLH', data[dataoff:(dataoff+self.__class__.headersize)])
+        symoff = (basesymoff + CoffSymtable.headersize * symidx)
+        if (symoff + CoffSymtable.headersize) > len(data):
+            raise Exception('symidx [%d] outof size'%(symidx))
+        name = data[(symoff) : (symoff + 8)]
+        ni = 0
+        for b in name:
+            if b == b'\x00':
+                break
+            ni += 1
+        if ni > 0:
+            if sys.version[0] == '3':
+                nname = b''
+            else:
+                nname = ''
+            for b in name:
+                if b == b'\x00' or b == b'\x20':
+                    break
+                if sys.version[0] == '3':
+                    #logging.info('b [0x%x]'%(b))
+                    nname += b.to_bytes(1,'little')
+                else:
+                    nname += b
+            if sys.version[0] == '3':
+                self.__name = nname.decode('utf8')
+            else:
+                self.__name = str(nname)
+        else:
+            # this means we get from the stroff
+            nameoff = struct.unpack('<l',data[(symoff + 4):(symoff + 8)])[0]
+            nameoff += stroff
+            if sys.version[0] == '3':
+                nname = b''
+            else:
+                nname = ''
+            while nameoff < strend:
+                b = data[nameoff]
+                if b == b'\x00':
+                    break
+                if sys.version[0] == '3':
+                    #logging.info('b [0x%x]'%(b))
+                    nname += b.to_bytes(1,'little')
+                else:
+                    nname += b
+                nameoff += 1
+            if sys.version[0] == '3':
+                self.__name = nname.decode('utf8')
+            else:
+                self.__name = str(nname)
+        return
+
+    def __str__(self):
+        rets = 'CoffReloc(name[%s];vaddr[0x%x];type[0x%x])'%(self.name,self.vaddr,self.type)
+        return rets
+
+    def __repr__(self):
+        return str(self)
+
+    def get_size(self):
+        return self.__class__.headersize
+
+
+
 class Coff(_LoggerObject):
-    keywords = ['fname','header','opthdr','sections','symtables']    
+    keywords = ['fname','header','opthdr','sections','symtables','relocs']
     def __read_binary(self,infile=None):
         fin = sys.stdin
         if infile is not None:
@@ -391,6 +468,7 @@ class Coff(_LoggerObject):
         self.__opthdr = None
         self.__sections = []
         self.__symtables = []
+        self.__relocs = []
         self.__stroffset = -1
         self.__symoffset = -1
         self.__strsize = -1
@@ -405,6 +483,19 @@ class Coff(_LoggerObject):
             i += 1
             i += sym.numaux
             symoff += sym.get_size()
+        return
+
+    def __parse_reloc(self,data):
+        basesymoff = self.__symoffset
+        stroff = self.__stroffset
+        strend = (self.__stroffset + self.__strsize)
+        for section in self.sections:
+            if section.offrel != 0:
+                curreloff = section.offrel
+                for i in range(section.numrels):
+                    rel = CoffReloc(data,curreloff,basesymoff, stroff,strend)
+                    self.__relocs.append(rel)
+                    curreloff += rel.get_size()
         return
 
 
@@ -424,6 +515,7 @@ class Coff(_LoggerObject):
         self.__stroffset = self.__header.symtab + (self.__header.symnums * CoffSymtable.headersize)
         self.__strsize = struct.unpack('<I',data[self.__stroffset:(self.__stroffset+4)])[0]
         self.__parse_symtable(data)
+        self.__parse_reloc(data)
         return
 
     def __init__(self,fname=None):
