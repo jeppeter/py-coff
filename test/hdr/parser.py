@@ -78,10 +78,19 @@ def symbols_handler(args,parser):
 	set_logging_level(args)
 	for v in args.subnargs:
 		cffmt = coff.Coff(v)
-		idx = 0
-		for sym in cffmt.symtables:
-			sys.stdout.write('[%s].[%d] %s\n'%(v,idx,sym))
-			idx += 1
+		for seckey in cffmt.symtables.keys():
+			idx = 0
+			secint = int(seckey) - 1
+			section = cffmt.sections[secint]
+			sys.stdout.write('[%s] %s value\n'%(seckey,section))
+			for sym in cffmt.symtables[seckey]['value']:
+				sys.stdout.write('    [%d] %s\n'%(idx,sym))
+				idx += 1
+			idx = 0
+			sys.stdout.write('[%s] %s name\n'%(seckey, section))
+			for sym in cffmt.symtables[seckey]['name']:
+				sys.stdout.write('    [%d] %s\n'%(idx,sym))
+				idx += 1
 	sys.exit(0)
 	return
 
@@ -90,9 +99,15 @@ def relocs_handler(args,parser):
 	for v in args.subnargs:
 		cffmt = coff.Coff(v)
 		idx = 0
-		for rel in cffmt.relocs:
-			sys.stdout.write('[%s].[%d] %s\n'%(v,idx,rel))
-			idx += 1
+		for seckey in cffmt.relocs.keys():
+			secint = int(seckey) - 1
+			section = cffmt.sections[secint]
+			relocs = cffmt.relocs[seckey]
+			idx = 0
+			sys.stdout.write('[%s].[%s]%s relocs\n'%(v,seckey,section))
+			for rel in relocs:
+				sys.stdout.write('    [%d] %s\n'%(idx,rel))
+				idx += 1
 	sys.exit(0)
 	return
 

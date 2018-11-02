@@ -215,20 +215,38 @@ class CoffOptHeader(_LoggerObject):
         return str(self)
 
 
-COFF_STYP_REG=0x0
-COFF_STYP_DSECT=0x1
-COFF_STYP_NOLOAD=0x2
-COFF_STYP_GROUP=0x4
-COFF_STYP_PAD=0x8
-COFF_STYP_COPY=0x10
-COFF_STYP_TEXT=0X20
-COFF_STYP_DATA=0x40
-COFF_STYP_BSS=0x80
-COFF_STYP_BLOCK=0x1000
-COFF_STYP_PASS=0x2000
-COFF_STYP_CLINK=0x4000
-COFF_STYP_VECTOR=0x8000
-COFF_STYP_PADDED=0x10000
+IMAGE_SCN_TYPE_NO_PAD=0x8
+IMAGE_SCN_CNT_CODE=0X20
+IMAGE_SCN_CNT_INITIALIZED_DATA=0x40
+IMAGE_SCN_CNT_UNINITIALIZED_DATA=0x80
+IMAGE_SCN_LNK_OTHER=0x100
+IMAGE_SCN_LNK_INFO=0x200
+IMAGE_SCN_LNK_REMOVE=0x800
+IMAGE_SCN_LNK_COMDAT=0x1000
+IMAGE_SCN_GPREL=0x8000
+IMAGE_SCN_ALIGN_1BYTES=0x100000
+IMAGE_SCN_ALIGN_2BYTES=0x200000
+IMAGE_SCN_ALIGN_4BYTES=0x300000
+IMAGE_SCN_ALIGN_8BYTES=0x400000
+IMAGE_SCN_ALIGN_16BYTES=0x500000
+IMAGE_SCN_ALIGN_32BYTES=0x600000
+IMAGE_SCN_ALIGN_64BYTES=0x700000
+IMAGE_SCN_ALIGN_128BYTES=0x80000
+IMAGE_SCN_ALIGN_256BYTES=0x900000
+IMAGE_SCN_ALIGN_512BYTES=0xa00000
+IMAGE_SCN_ALIGN_1024BYTES=0xb00000
+IMAGE_SCN_ALIGN_2048BYTES=0xc00000
+IMAGE_SCN_ALIGN_4096BYTES=0xd00000
+IMAGE_SCN_ALIGN_8192BYTES=0xe00000
+IMAGE_SCN_ALIGN_MASK=0xf00000
+IMAGE_SCN_LNK_NRELOC_OVFL=0x1000000
+IMAGE_SCN_MEM_DISCARDABLE=0x2000000
+IMAGE_SCN_MEM_NOT_CACHED=0x4000000
+IMAGE_SCN_MEM_NOT_PAGED=0x8000000
+IMAGE_SCN_MEM_SHARED=0x10000000
+IMAGE_SCN_MEM_EXECUTE=0x20000000
+IMAGE_SCN_MEM_READ=0x40000000
+IMAGE_SCN_MEM_WRITE=0x80000000
 
 
 class CoffSectionHeader(_LoggerObject):
@@ -247,8 +265,12 @@ class CoffSectionHeader(_LoggerObject):
         else:
             nname = ''
         for b in name:
-            if b == b'\x00' or b == b'\x20':
-                break
+            if sys.version[0] == '3':
+                if b == 0 or b == 0x20:
+                    break
+            else:
+                if ord(b) == 0 or ord(b) == 0x20:
+                    break
             if sys.version[0] == '3':
                 #logging.info('b [0x%x]'%(b))
                 nname += b.to_bytes(1,'little')
@@ -263,34 +285,73 @@ class CoffSectionHeader(_LoggerObject):
 
     def format_flags(self,flags):
         rets = ''
-        if flags & COFF_STYP_REG:
-            rets = coff_add_name(rets,'REG')
-        if flags & COFF_STYP_DSECT:
-            rets = coff_add_name(rets,'DSECT')
-        if flags & COFF_STYP_NOLOAD:
-            rets = coff_add_name(rets,'NOLOAD')            
-        if flags & COFF_STYP_GROUP:
-            rets = coff_add_name(rets,'GROUP')
-        if flags & COFF_STYP_PAD:
-            rets = coff_add_name(rets,'PAD')
-        if flags & COFF_STYP_COPY:
-            rets = coff_add_name(rets,'COPY')
-        if flags & COFF_STYP_TEXT:
-            rets = coff_add_name(rets,'TEXT')
-        if flags & COFF_STYP_DATA:
-            rets = coff_add_name(rets,'DATA')
-        if flags & COFF_STYP_BSS:
+        if flags & IMAGE_SCN_TYPE_NO_PAD:
+            rets = coff_add_name(rets,'NO_PAD')
+        if flags & IMAGE_SCN_CNT_CODE:
+            rets = coff_add_name(rets,'CODE')
+        if flags & IMAGE_SCN_CNT_INITIALIZED_DATA:
+            rets = coff_add_name(rets,'DATA')            
+        if flags & IMAGE_SCN_CNT_UNINITIALIZED_DATA:
             rets = coff_add_name(rets,'BSS')
-        if flags & COFF_STYP_BLOCK:
-            rets = coff_add_name(rets,'BLOCK')
-        if flags & COFF_STYP_PASS:
-            rets = coff_add_name(rets,'PASS')
-        if flags & COFF_STYP_CLINK:
-            rets = coff_add_name(rets,'CLINK')
-        if flags & COFF_STYP_VECTOR:
-            rets = coff_add_name(rets,'VECTOR')
-        if flags & COFF_STYP_PADDED:
-            rets = coff_add_name(rets,'PADDED')
+        if flags & IMAGE_SCN_LNK_OTHER:
+            rets = coff_add_name(rets,'OTHER')
+        if flags & IMAGE_SCN_LNK_INFO:
+            rets = coff_add_name(rets,'INFO')
+        if flags & IMAGE_SCN_LNK_REMOVE:
+            rets = coff_add_name(rets,'REMOVE')
+        if flags & IMAGE_SCN_LNK_COMDAT:
+            rets = coff_add_name(rets,'COMDAT')
+        if flags & IMAGE_SCN_GPREL:
+            rets = coff_add_name(rets,'GPREL')
+        alignmask = flags & IMAGE_SCN_ALIGN_MASK
+        if alignmask == IMAGE_SCN_ALIGN_1BYTES:
+            rets = coff_add_name(rets,'1 byte align')
+        elif alignmask == IMAGE_SCN_ALIGN_2BYTES:
+            rets = coff_add_name(rets,'2 bytes align')
+        elif alignmask == IMAGE_SCN_ALIGN_4BYTES:
+            rets = coff_add_name(rets,'4 bytes align')
+        elif alignmask == IMAGE_SCN_ALIGN_8BYTES:
+            rets = coff_add_name(rets,'8 bytes align')
+        elif alignmask == IMAGE_SCN_ALIGN_16BYTES:
+            rets = coff_add_name(rets,'16 bytes align')
+        elif alignmask == IMAGE_SCN_ALIGN_32BYTES:
+            rets = coff_add_name(rets,'32 bytes align')
+        elif alignmask == IMAGE_SCN_ALIGN_64BYTES:
+            rets = coff_add_name(rets,'64 bytes align')
+        elif alignmask == IMAGE_SCN_ALIGN_128BYTES:
+            rets = coff_add_name(rets,'128 bytes align')
+        elif alignmask == IMAGE_SCN_ALIGN_256BYTES:
+            rets = coff_add_name(rets,'256 bytes align')
+        elif alignmask == IMAGE_SCN_ALIGN_512BYTES:
+            rets = coff_add_name(rets,'512 bytes align')
+        elif alignmask == IMAGE_SCN_ALIGN_1024BYTES:
+            rets = coff_add_name(rets,'1024 bytes align')
+        elif alignmask == IMAGE_SCN_ALIGN_2048BYTES:
+            rets = coff_add_name(rets,'2048 bytes align')
+        elif alignmask == IMAGE_SCN_ALIGN_4096BYTES:
+            rets = coff_add_name(rets,'4096 bytes align')
+        elif alignmask == IMAGE_SCN_ALIGN_8192BYTES:
+            rets = coff_add_name(rets,'8192 bytes align')
+
+        if flags & IMAGE_SCN_LNK_NRELOC_OVFL:
+            rets = coff_add_name(rets,'OVFL')
+        if flags & IMAGE_SCN_MEM_DISCARDABLE:
+            rets = coff_add_name(rets,'DISCARDABLE')
+
+        if flags & IMAGE_SCN_MEM_NOT_CACHED:
+            rets = coff_add_name(rets,'NOT_CACHED')
+
+        if flags & IMAGE_SCN_MEM_NOT_PAGED:
+            rets = coff_add_name(rets,'NOT_PAGED')
+        if flags & IMAGE_SCN_MEM_SHARED:
+            rets = coff_add_name(rets,'MEM_SHARED')
+
+        if flags & IMAGE_SCN_MEM_EXECUTE:
+            rets = coff_add_name(rets,'EXECUTE')
+        if flags & IMAGE_SCN_MEM_READ:
+            rets = coff_add_name(rets,'READ')
+        if flags & IMAGE_SCN_MEM_WRITE:
+            rets = coff_add_name(rets,'WRITE')
         return rets
 
     def get_size(self):
@@ -303,6 +364,33 @@ class CoffSectionHeader(_LoggerObject):
     def __repr__(self):
         return str(self)
 
+IMAGE_SYM_CLASS_END_OF_FUNCTION=0xff
+IMAGE_SYM_CLASS_NULL=0x0
+IMAGE_SYM_CLASS_AUTOMATIC=0x1
+IMAGE_SYM_CLASS_EXTERNAL=0x2
+IMAGE_SYM_CLASS_STATIC=0x3
+IMAGE_SYM_CLASS_REGISTER=0x4
+IMAGE_SYM_CLASS_EXTERNAL_DEF=0x5
+IMAGE_SYM_CLASS_LABEL=0x6
+IMAGE_SYM_CLASS_UNDEFINED_LABEL=0x7
+IMAGE_SYM_CLASS_MEMBER_OF_STRUCT=0x8
+IMAGE_SYM_CLASS_ARGUMENT=0x9
+IMAGE_SYM_CLASS_STRUCT_TAG=0xa
+IMAGE_SYM_CLASS_MEMBER_OF_UNION=0xb
+IMAGE_SYM_CLASS_UNION_TAG=0xc
+IMAGE_SYM_CLASS_TYPE_DEFINITION=0xd
+IMAGE_SYM_CLASS_UNDEFINED_STATIC=0xe
+IMAGE_SYM_CLASS_ENUM_TAG=0xf
+IMAGE_SYM_CLASS_MEMBER_OF_ENUM=0x10
+IMAGE_SYM_CLASS_REGISTER_PARAM=0x11
+IMAGE_SYM_CLASS_BIT_FIELD=0x12
+IMAGE_SYM_CLASS_BLOCK=0x64
+IMAGE_SYM_CLASS_FUNCTION=0x65
+IMAGE_SYM_CLASS_END_OF_STRUCT=0x66
+IMAGE_SYM_CLASS_FILE=0x67
+IMAGE_SYM_CLASS_SECTION=0x68
+IMAGE_SYM_CLASS_WEAK_EXTERNAL=0x69
+IMAGE_SYM_CLASS_CLR_TOKEN=0x6b
 
 class CoffSymtable(_LoggerObject):
     keywords = ['name','value','sectnum','type','storagecls','numaux']
@@ -315,8 +403,12 @@ class CoffSymtable(_LoggerObject):
         self.__size = self.__class__.headersize
         ni = 0
         for b in name:
-            if b == b'\x00':
-                break
+            if sys.version[0] == '3':
+                if b == 0:
+                    break
+            else:
+                if ord(b) == 0:
+                    break
             ni += 1
         if ni > 0:
             if sys.version[0] == '3':
@@ -324,8 +416,12 @@ class CoffSymtable(_LoggerObject):
             else:
                 nname = ''
             for b in name:
-                if b == b'\x00' or b == b'\x20':
-                    break
+                if sys.version[0] == '3':
+                    if b == 0 or b == 0x20:
+                        break
+                else:
+                    if ord(b) == 0 or ord(b) == 0x20:
+                        break
                 if sys.version[0] == '3':
                     #logging.info('b [0x%x]'%(b))
                     nname += b.to_bytes(1,'little')
@@ -345,8 +441,12 @@ class CoffSymtable(_LoggerObject):
                 nname = ''
             while nameoff < strend:
                 b = data[nameoff]
-                if b == b'\x00':
-                    break
+                if sys.version[0] == '3':
+                    if b == 0x0:
+                        break
+                else:
+                    if ord(b) == 0:
+                        break
                 if sys.version[0] == '3':
                     #logging.info('b [0x%x]'%(b))
                     nname += b.to_bytes(1,'little')
@@ -359,8 +459,66 @@ class CoffSymtable(_LoggerObject):
                 self.__name = str(nname)
         if self.__numaux > 0 :
             self.__size += self.__numaux * self.__class__.headersize
+        self.size = 0
         return
 
+    def format_storagecls(self,storagecls):
+        rets= ''
+        if storagecls == IMAGE_SYM_CLASS_END_OF_FUNCTION:
+            rets = 'END_OF_FUNCTION'
+        elif storagecls == IMAGE_SYM_CLASS_NULL:
+            rets = 'NULL'
+        elif storagecls == IMAGE_SYM_CLASS_AUTOMATIC:
+            rets = 'ATOMIC'
+        elif storagecls == IMAGE_SYM_CLASS_EXTERNAL:
+            rets = 'EXTERNAL'
+        elif storagecls == IMAGE_SYM_CLASS_STATIC:
+            rets = 'STATIC'
+        elif storagecls == IMAGE_SYM_CLASS_REGISTER:
+            rets = 'REGISTER'
+        elif storagecls == IMAGE_SYM_CLASS_EXTERNAL_DEF:
+            rets = 'EXTERNAL_DEF'
+        elif storagecls == IMAGE_SYM_CLASS_LABEL:
+            rets = 'LABEL'
+        elif storagecls == IMAGE_SYM_CLASS_UNDEFINED_LABEL:
+            rets = 'UNDEFINED_LABEL'
+        elif storagecls == IMAGE_SYM_CLASS_MEMBER_OF_STRUCT:
+            rets = 'MEMBER_OF_STRUCT'
+        elif storagecls == IMAGE_SYM_CLASS_ARGUMENT:
+            rets = 'ARGUMENT'
+        elif storagecls == IMAGE_SYM_CLASS_STRUCT_TAG:
+            rets = 'STRUCT_TAG'
+        elif storagecls == IMAGE_SYM_CLASS_MEMBER_OF_UNION:
+            rets = 'MEMBER_OF_UNION'
+        elif storagecls == IMAGE_SYM_CLASS_UNION_TAG:
+            rets = 'UNION_TAG'
+        elif storagecls == IMAGE_SYM_CLASS_TYPE_DEFINITION:
+            rets = 'TYPE_DEFINITION'
+        elif storagecls == IMAGE_SYM_CLASS_UNDEFINED_STATIC:
+            rets = 'UNDEFINED_STATIC'
+        elif storagecls == IMAGE_SYM_CLASS_ENUM_TAG:
+            rets = 'ENUM_TAG'
+        elif storagecls == IMAGE_SYM_CLASS_MEMBER_OF_ENUM:
+            rets = 'MEMBER_OF_ENUM'
+        elif storagecls == IMAGE_SYM_CLASS_REGISTER_PARAM:
+            rets = 'REGISTER_PARAM'
+        elif storagecls == IMAGE_SYM_CLASS_BIT_FIELD:
+            rets = 'BIT_FIELD'
+        elif storagecls == IMAGE_SYM_CLASS_BLOCK:
+            rets = 'BLOCK'
+        elif storagecls == IMAGE_SYM_CLASS_FUNCTION:
+            rets = 'FUNCTION'
+        elif storagecls == IMAGE_SYM_CLASS_END_OF_STRUCT:
+            rets = 'END_OF_STRUCT'
+        elif storagecls == IMAGE_SYM_CLASS_FILE:
+            rets = 'FILE'
+        elif storagecls == IMAGE_SYM_CLASS_SECTION:
+            rets = 'SECTION'
+        elif storagecls == IMAGE_SYM_CLASS_WEAK_EXTERNAL:
+            rets = 'WEAK_EXTERNAL'
+        elif storagecls == IMAGE_SYM_CLASS_CLR_TOKEN:
+            rets = 'CLR_TOKEN'
+        return rets
 
 
     def __str__(self):
@@ -368,8 +526,9 @@ class CoffSymtable(_LoggerObject):
         rets += 'value[0x%x]'%(self.value)
         rets += 'sectnum[%d]'%(self.sectnum)
         rets += 'type[0x%x]'%(self.type)
-        rets += 'storagecls[0x%x]'%(self.storagecls)
+        rets += 'storagecls[0x%x(%s)]'%(self.storagecls, self.format_storagecls(self.storagecls))
         rets += 'numaux[%d]'%(self.numaux)
+        rets += 'size[0x%x]'%(self.size)
         return rets
 
     def __repr__(self):
@@ -378,6 +537,37 @@ class CoffSymtable(_LoggerObject):
     def get_size(self):
         return self.__size
 
+
+IMAGE_REL_AMD64_ABSOLUTE=0x0
+IMAGE_REL_AMD64_ADDR64=0x1
+IMAGE_REL_AMD64_ADDR32=0x2
+IMAGE_REL_AMD64_ADDR32NB=0x3
+IMAGE_REL_AMD64_REL32=0x4
+IMAGE_REL_AMD64_REL32_1=0x5
+IMAGE_REL_AMD64_REL32_2=0x6
+IMAGE_REL_AMD64_REL32_3=0x7
+IMAGE_REL_AMD64_REL32_4=0x8
+IMAGE_REL_AMD64_REL32_5=0x9
+IMAGE_REL_AMD64_SECTION=0xa
+IMAGE_REL_AMD64_SECREL=0xb
+IMAGE_REL_AMD64_SECREL7=0xc
+IMAGE_REL_AMD64_TOKEN=0xd
+IMAGE_REL_AMD64_SREL32=0xe
+IMAGE_REL_AMD64_PAIR=0xf
+IMAGE_REL_AMD64_SSPAN32=0x10
+
+
+IMAGE_REL_I386_ABSOLUTE=0x0
+IMAGE_REL_I386_DIR16=0x1
+IMAGE_REL_I386_REL16=0x2
+IMAGE_REL_I386_DIR32=0x6
+IMAGE_REL_I386_DIR32NB=0x7
+IMAGE_REL_I386_SEG12=0x9
+IMAGE_REL_I386_SECTION=0xa
+IMAGE_REL_I386_SECREL=0xb
+IMAGE_REL_I386_TOKEN=0xc
+IMAGE_REL_I386_SECREL7=0xd
+IMAGE_REL_I386_REL32=0x14
 
 class CoffReloc(_LoggerObject):
     keywords = ['name','vaddr','type']
@@ -392,8 +582,12 @@ class CoffReloc(_LoggerObject):
         name = data[(symoff) : (symoff + 8)]
         ni = 0
         for b in name:
-            if b == b'\x00':
-                break
+            if sys.version[0] == '3':
+                if b == 0x0:
+                    break
+            else:
+                if ord(b) == 0x0:
+                    break
             ni += 1
         if ni > 0:
             if sys.version[0] == '3':
@@ -401,8 +595,12 @@ class CoffReloc(_LoggerObject):
             else:
                 nname = ''
             for b in name:
-                if b == b'\x00' or b == b'\x20':
-                    break
+                if sys.version[0] == '3':
+                    if b == 0x0 or b == 0x20:
+                        break
+                else:
+                    if ord(b) == 0x0 or ord(b) == 0x20:
+                        break
                 if sys.version[0] == '3':
                     #logging.info('b [0x%x]'%(b))
                     nname += b.to_bytes(1,'little')
@@ -422,8 +620,12 @@ class CoffReloc(_LoggerObject):
                 nname = ''
             while nameoff < strend:
                 b = data[nameoff]
-                if b == b'\x00':
-                    break
+                if sys.version[0] == '3':
+                    if b == 0x0:
+                        break
+                else:
+                    if ord(b) == 0:
+                        break
                 if sys.version[0] == '3':
                     #logging.info('b [0x%x]'%(b))
                     nname += b.to_bytes(1,'little')
@@ -434,10 +636,11 @@ class CoffReloc(_LoggerObject):
                 self.__name = nname.decode('utf8')
             else:
                 self.__name = str(nname)
+        self.size = 0
         return
 
     def __str__(self):
-        rets = 'CoffReloc(name[%s];vaddr[0x%x];type[0x%x])'%(self.name,self.vaddr,self.type)
+        rets = 'CoffReloc(name[%s];vaddr[0x%x];type[0x%x];size[0x%x])'%(self.name,self.vaddr,self.type,self.size)
         return rets
 
     def __repr__(self):
@@ -449,7 +652,7 @@ class CoffReloc(_LoggerObject):
 
 
 class Coff(_LoggerObject):
-    keywords = ['fname','header','opthdr','sections','symtables','relocs']
+    keywords = ['fname','header','opthdr','sections','relocs','symtables']
     def __read_binary(self,infile=None):
         fin = sys.stdin
         if infile is not None:
@@ -468,7 +671,7 @@ class Coff(_LoggerObject):
         self.__opthdr = None
         self.__sections = []
         self.__symtables = []
-        self.__relocs = []
+        self.__relocs = dict()
         self.__stroffset = -1
         self.__symoffset = -1
         self.__strsize = -1
@@ -477,25 +680,76 @@ class Coff(_LoggerObject):
     def __parse_symtable(self,data):
         symoff = self.__symoffset
         i = 0
+        self.__symtables = dict()
         while i < self.__header.symnums:
             sym = CoffSymtable(data,symoff, self.__stroffset, (self.__stroffset + self.__strsize))
-            self.__symtables.append(sym)
             i += 1
             i += sym.numaux
             symoff += sym.get_size()
+            if sym.sectnum < 1 or sym.sectnum > len(self.sections):
+                logging.info('%s'%(sym))
+                continue
+            if sym.numaux != 0:
+                logging.info('%s'%(sym))
+                continue            
+            section = self.sections[(sym.sectnum-1)]
+            seckey = '%d'%(sym.sectnum)
+            if seckey not in self.__symtables.keys():
+                self.__symtables[seckey] = dict()
+                self.__symtables[seckey]['value'] = []
+                self.__symtables[seckey]['name'] = []
+            self.__symtables[seckey]['value'].append(sym)
+        for seckey in self.__symtables.keys():
+            valuetble = self.__symtables[seckey]['value']
+            valuetble = sorted(valuetble, key = lambda sym : sym.value)
+            idx = 0
+            for sym in valuetble:
+                nidx = idx + 1
+                while nidx < len(valuetble):
+                    if valuetble[idx].storagecls != IMAGE_SYM_CLASS_LABEL and valuetble[nidx].storagecls != IMAGE_SYM_CLASS_LABEL:
+                        sym.size = valuetble[nidx].value - valuetble[idx].value
+                        break
+                    elif valuetble[idx].storagecls == IMAGE_SYM_CLASS_LABEL:
+                        sym.size = valuetble[nidx].value - valuetble[idx].value
+                        break
+                    else:
+                        logging.info('[%s][%d]%s [%d]%s'%(seckey,idx,valuetble[idx], nidx,valuetble[nidx]))
+                    nidx += 1
+                if nidx >= len(valuetble):
+                    secint = int(seckey) - 1
+                    section = self.sections[secint]
+                    sym.size = section.size - valuetble[idx].value
+                idx += 1
+            self.__symtables[seckey]['value'] = valuetble
+            self.__symtables[seckey]['name'] = sorted(valuetble, key = lambda sym: sym.name )
         return
 
     def __parse_reloc(self,data):
         basesymoff = self.__symoffset
         stroff = self.__stroffset
         strend = (self.__stroffset + self.__strsize)
+        self.__relocs = dict()
+        idx = 0
         for section in self.sections:
-            if section.offrel != 0:
+            idx += 1
+            seckey = '%d'%(idx)
+            self.__relocs[seckey] = []
+            if section.offrel != 0 and (section.flags & IMAGE_SCN_CNT_CODE) != 0 and (section.flags & IMAGE_SCN_LNK_COMDAT) == 0:
                 curreloff = section.offrel
-                for i in range(section.numrels):
+                for i in range(section.numrels-1):
                     rel = CoffReloc(data,curreloff,basesymoff, stroff,strend)
-                    self.__relocs.append(rel)
+                    if self.__header.id == 0x8664:
+                        if rel.type >= IMAGE_REL_AMD64_REL32  and rel.type <= IMAGE_REL_AMD64_REL32_5:
+                            rel.size = 4
+                            self.__relocs[seckey].append(rel)
+                    elif self.__header.id == 0x14c:
+                        if rel.type == IMAGE_REL_I386_DIR32  or rel.type == IMAGE_REL_I386_DIR32NB  or rel.type == IMAGE_REL_I386_REL32 :
+                            self.__relocs[seckey].append(rel)
+                            rel.size = 4
                     curreloff += rel.get_size()
+        # to sort by the vaddr
+        for seckey in self.__relocs.keys():
+            self.__relocs[seckey] = sorted(self.__relocs[seckey], key=lambda rel : rel.vaddr)
         return
 
 
