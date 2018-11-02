@@ -118,7 +118,7 @@ timestamp | time stamp created for created coff file |  |
 symtab | file pointer of the symtable in the coff file |  |
 symnums | sym numbers in the symtable |  |
 optsize | opt header size ==0 means no opt header |  |
-flags | flag indicate for the flags see [flags](https://docs.microsoft.com/en-us/windows/desktop/Debug/pe-format#characteristics) |  |
+flags | flag indicate for the flags [see](https://docs.microsoft.com/en-us/windows/desktop/Debug/pe-format#characteristics) |  |
 symtab | file pointer of the symtable in the coff file |  |
 
 ## variable for OptHeader 
