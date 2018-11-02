@@ -117,13 +117,21 @@ class _LoggerObject(object):
         return True
 
 
-COFF_F_RELFLG=1
-COFF_F_EXEC=2
-COFF_F_LNNO=4
-COFF_F_LSYMS=8
-COFF_F_LITTLE=0x100
-COFF_F_BIG=0x200
-COFF_F_SYMMERGE=0x1000
+IMAGE_FILE_RELOCS_STRIPPED=1
+IMAGE_FILE_EXECUTABLE_IMAGE=2
+IMAGE_FILE_LINE_NUMS_STRIPPED=4
+IMAGE_FILE_LOCAL_SYMS_STRIPPED=8
+IMAGE_FILE_AGGRESSIVE_WS_TRIM=0x10
+IMAGE_FILE_LARGE_ADDRESS_AWARE=0x20
+IMAGE_FILE_BYTES_REVERSED_LO=0x80
+IMAGE_FILE_32BIT_MACHINE=0x100
+IMAGE_FILE_DEBUG_STRIPPED=0x200
+IMAGE_FILE_REMOVABLE_RUN_FROM_SWAP=0x400
+IMAGE_FILE_NET_RUN_FROM_SWAP=0x800
+IMAGE_FILE_SYSTEM=0x1000
+IMAGE_FILE_DLL=0x2000
+IMAGE_FILE_UP_SYSTEM_ONLY=0x4000
+IMAGE_FILE_BYTES_REVERSED_HI=0x8000
 
 
 def coff_add_name(s,items):
@@ -161,20 +169,36 @@ class CoffHeader(_LoggerObject):
 
     def format_flag(self,flag):
         rets = ''
-        if flag & COFF_F_RELFLG:
-            rets = coff_add_name(rets,'REL')
-        if flag & COFF_F_EXEC:
-            rets = coff_add_name(rets,'EXEC')
-        if flag & COFF_F_LNNO:
-            rets = coff_add_name(rets,'LNNO')
-        if flag & COFF_F_LSYMS:
-            rets = coff_add_name(rets,'LSYMS')
-        if flag & COFF_F_LITTLE:
-            rets = coff_add_name(rets,'LITTLE')
-        if flag & COFF_F_BIG:
-            rets = coff_add_name(rets,'BIG')
-        if flag & COFF_F_SYMMERGE:
-            rets = coff_add_name(rets,'SYMMERGE')
+        if flag & IMAGE_FILE_RELOCS_STRIPPED:
+            rets = coff_add_name(rets,'relocs_stripped')
+        elif flag & IMAGE_FILE_EXECUTABLE_IMAGE:
+            rets = coff_add_name(rets,'executable')
+        elif flag & IMAGE_FILE_LINE_NUMS_STRIPPED:
+            rets = coff_add_name(rets,'LINE_NUMS_STRIPPED')
+        elif flag & IMAGE_FILE_LOCAL_SYMS_STRIPPED:
+            rets = coff_add_name(rets,'LOCAL_SYMS_STRIPPED')
+        elif flag & IMAGE_FILE_AGGRESSIVE_WS_TRIM:
+            rets = coff_add_name(rets,'AGGRESSIVE_WS_TRIM')
+        elif flag & IMAGE_FILE_LARGE_ADDRESS_AWARE:
+            rets = coff_add_name(rets,'LARGE_ADDRESS_WARE')
+        elif flag & IMAGE_FILE_BYTES_REVERSED_LO:
+            rets = coff_add_name(rets,'BYTES_RESERVED_LO')
+        elif flag & IMAGE_FILE_32BIT_MACHINE:
+            rets = coff_add_name(rets,'32BIT_MACHINE')
+        elif flag & IMAGE_FILE_DEBUG_STRIPPED:
+            rets = coff_add_name(rets,'DEBUG_STRIPPED')
+        elif flag & IMAGE_FILE_REMOVABLE_RUN_FROM_SWAP:
+            rets = coff_add_name(rets,'REMOVABLE_RUN_FROM_SWAP')
+        elif flag & IMAGE_FILE_NET_RUN_FROM_SWAP:
+            rets = coff_add_name(rets,'NET_RUN_FROM_SWAP')
+        elif flag & IMAGE_FILE_SYSTEM:
+            rets = coff_add_name(rets,'SYSTEM')
+        elif flag & IMAGE_FILE_DLL:
+            rets = coff_add_name(rets,'DLL')
+        elif flag & IMAGE_FILE_UP_SYSTEM_ONLY:
+            rets = coff_add_name(rets,'UP_SYSTEM_ONLY')
+        elif flag & IMAGE_FILE_BYTES_REVERSED_HI:
+            rets = coff_add_name(rets,'BYTES_RESERVED_HI')
         return rets
 
     def foramt_time(self,timestamp):
@@ -693,7 +717,7 @@ class Coff(_LoggerObject):
                 logging.info('%s'%(sym))
                 continue            
             section = self.sections[(sym.sectnum-1)]
-            seckey = '%d'%(sym.sectnum)
+            seckey = sym.sectnum - 1
             if seckey not in self.__symtables.keys():
                 self.__symtables[seckey] = dict()
                 self.__symtables[seckey]['value'] = []
@@ -715,9 +739,8 @@ class Coff(_LoggerObject):
                     else:
                         logging.info('[%s][%d]%s [%d]%s'%(seckey,idx,valuetble[idx], nidx,valuetble[nidx]))
                     nidx += 1
-                if nidx >= len(valuetble):
-                    secint = int(seckey) - 1
-                    section = self.sections[secint]
+                if nidx >= len(valuetble):                    
+                    section = self.sections[seckey]
                     sym.size = section.size - valuetble[idx].value
                 idx += 1
             self.__symtables[seckey]['value'] = valuetble
@@ -732,7 +755,7 @@ class Coff(_LoggerObject):
         idx = 0
         for section in self.sections:
             idx += 1
-            seckey = '%d'%(idx)
+            seckey = (idx - 1)
             self.__relocs[seckey] = []
             if section.offrel != 0 and (section.flags & IMAGE_SCN_CNT_CODE) != 0 and (section.flags & IMAGE_SCN_LNK_COMDAT) == 0:
                 curreloff = section.offrel
