@@ -12,28 +12,30 @@ import sys
 
 def main():
 	for v in sys.argv[1:]:
-		cffmt = coff.Coff(v)
-		idx = 0
-		for seckey in cffmt.relocs.keys():
-			section = cffmt.sections[seckey]
-			relocs = cffmt.relocs[seckey]
-			idx = 0
-			sys.stdout.write('[%s].[%s]%s relocs\n'%(v,seckey,section))
-			for rel in relocs:
-				sys.stdout.write('    [%d] %s\n'%(idx,rel))
-				idx += 1
-		for seckey in cffmt.symtables.keys():
-			idx = 0
-			section = cffmt.sections[seckey]
-			sys.stdout.write('[%s] %s value\n'%(seckey,section))
-			for sym in cffmt.symtables[seckey]['value']:
-				sys.stdout.write('    [%d] %s\n'%(idx,sym))
-				idx += 1
-			idx = 0
-			sys.stdout.write('[%s] %s name\n'%(seckey, section))
-			for sym in cffmt.symtables[seckey]['name']:
-				sys.stdout.write('    [%d] %s\n'%(idx,sym))
-				idx += 1
+        cffmt = coff.Coff(v)
+        idx = 0
+        for seckey in cffmt.relocs.keys():
+            section = cffmt.sections[seckey]
+            relocs = cffmt.relocs[seckey]
+            idx = 0
+            sys.stdout.write('[%s].[%s]%s relocs\n'%(v,seckey,section))
+            relocs = sorted(relocs, key=lambda rel: rel.value)
+            for rel in relocs:
+                sys.stdout.write('    [%d] %s\n'%(idx,rel))
+                idx += 1
+        for seckey in cffmt.symtables.keys():
+            idx = 0
+            section = cffmt.sections[seckey]
+            sys.stdout.write('[%s] %s value\n'%(seckey,section))
+            for sym in cffmt.symtables[seckey]:
+                sys.stdout.write('    [%d] %s\n'%(idx,sym))
+                idx += 1
+            idx = 0
+            sys.stdout.write('[%s] %s name\n'%(seckey, section))
+            nametbl = sorted(cffmt.symtables[seckey], key =lambda sym: sym.name)
+            for sym in nametbl:
+                sys.stdout.write('    [%d] %s\n'%(idx,sym))
+                idx += 1
 	sys.exit(0)
 
 main()
