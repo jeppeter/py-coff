@@ -719,12 +719,10 @@ class Coff(_LoggerObject):
             section = self.sections[(sym.sectnum-1)]
             seckey = sym.sectnum - 1
             if seckey not in self.__symtables.keys():
-                self.__symtables[seckey] = dict()
-                self.__symtables[seckey]['value'] = []
-                self.__symtables[seckey]['name'] = []
-            self.__symtables[seckey]['value'].append(sym)
+                self.__symtables[seckey] = []
+            self.__symtables[seckey].append(sym)
         for seckey in self.__symtables.keys():
-            valuetble = self.__symtables[seckey]['value']
+            valuetble = self.__symtables[seckey]
             valuetble = sorted(valuetble, key = lambda sym : sym.value)
             idx = 0
             for sym in valuetble:
@@ -743,8 +741,7 @@ class Coff(_LoggerObject):
                     section = self.sections[seckey]
                     sym.size = section.size - valuetble[idx].value
                 idx += 1
-            self.__symtables[seckey]['value'] = valuetble
-            self.__symtables[seckey]['name'] = sorted(valuetble, key = lambda sym: sym.name )
+            self.__symtables[seckey] = valuetble
         return
 
     def __parse_reloc(self,data):
@@ -770,9 +767,6 @@ class Coff(_LoggerObject):
                             self.__relocs[seckey].append(rel)
                             rel.size = 4
                     curreloff += rel.get_size()
-        # to sort by the vaddr
-        for seckey in self.__relocs.keys():
-            self.__relocs[seckey] = sorted(self.__relocs[seckey], key=lambda rel : rel.vaddr)
         return
 
 

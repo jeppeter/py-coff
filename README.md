@@ -2,6 +2,7 @@
 > python common object file format parse for windows compiler
 
 ### Release History
+* Nov 5th 2018 Release 0.0.4 to make simple of the relocs and symtable in the Coff class
 * Nov 2nd 2018 Release 0.0.2 the first version to handle
 
 ### simple example
