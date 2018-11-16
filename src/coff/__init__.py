@@ -756,7 +756,7 @@ class Coff(_LoggerObject):
             self.__relocs[seckey] = []
             if section.offrel != 0 and (section.flags & IMAGE_SCN_CNT_CODE) != 0 and (section.flags & IMAGE_SCN_LNK_COMDAT) == 0:
                 curreloff = section.offrel
-                for i in range(section.numrels-1):
+                for i in range(section.numrels):
                     rel = CoffReloc(data,curreloff,basesymoff, stroff,strend)
                     if self.__header.id == 0x8664:
                         if rel.type >= IMAGE_REL_AMD64_REL32  and rel.type <= IMAGE_REL_AMD64_REL32_5:

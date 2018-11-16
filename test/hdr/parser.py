@@ -120,7 +120,8 @@ def all_handler(args,parser):
 			relocs = cffmt.relocs[seckey]
 			idx = 0
 			sys.stdout.write('[%s].[%s]%s relocs\n'%(v,seckey,section))
-			relocs = sorted(relocs, key=lambda rel: rel.value)
+			logging.info('relocs [%s]'%(len(relocs)))
+			relocs = sorted(relocs, key=lambda rel: rel.vaddr)
 			for rel in relocs:
 				sys.stdout.write('    [%d] %s\n'%(idx,rel))
 				idx += 1
