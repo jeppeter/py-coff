@@ -711,10 +711,10 @@ class Coff(_LoggerObject):
             i += sym.numaux
             symoff += sym.get_size()
             if sym.sectnum < 1 or sym.sectnum > len(self.sections):
-                logging.info('%s'%(sym))
+                self.info('%s'%(sym))
                 continue
             if sym.numaux != 0:
-                logging.info('%s'%(sym))
+                self.info('%s'%(sym))
                 continue            
             section = self.sections[(sym.sectnum-1)]
             seckey = sym.sectnum - 1
@@ -735,7 +735,7 @@ class Coff(_LoggerObject):
                         sym.size = valuetble[nidx].value - valuetble[idx].value
                         break
                     else:
-                        logging.info('[%s][%d]%s [%d]%s'%(seckey,idx,valuetble[idx], nidx,valuetble[nidx]))
+                        self.info('[%s][%d]%s [%d]%s'%(seckey,idx,valuetble[idx], nidx,valuetble[nidx]))
                     nidx += 1
                 if nidx >= len(valuetble):                    
                     section = self.sections[seckey]
